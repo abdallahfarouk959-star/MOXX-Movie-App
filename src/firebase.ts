@@ -3,6 +3,7 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithRedirect, 
+  getRedirectResult,
   signOut 
 } from 'firebase/auth';
 import { 
@@ -23,7 +24,7 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// دالة تسجيل الدخول بـ Redirect لتفادي حظر الـ Pop-ups
+// دالة بدء تسجيل الدخول بـ Redirect
 export const signIn = async () => {
   try {
     await signInWithRedirect(auth, googleProvider);
@@ -31,6 +32,20 @@ export const signIn = async () => {
     console.error('Firebase Auth Redirect Error:', error);
     throw error;
   }
+};
+
+// دالة التحقق من نتيجة الـ Redirect عند العودة للموقع
+export const checkRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log('Successfully signed in:', result.user);
+      return result.user;
+    }
+  } catch (error: any) {
+    console.error('Firebase Redirect Result Error:', error);
+  }
+  return null;
 };
 
 export const logOut = () => signOut(auth);

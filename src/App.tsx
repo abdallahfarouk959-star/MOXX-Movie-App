@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -7,6 +8,7 @@ import Search from './components/Search';
 import MovieDetails from './components/MovieDetails';
 import { tmdb } from './services/tmdb';
 import { FavoritesProvider } from './FavoritesContext';
+import { checkRedirectResult } from './firebase';
 
 function Home() {
   return (
@@ -58,6 +60,11 @@ function TVPage() {
 }
 
 export default function App() {
+  // استقبال نتيجة الـ Redirect عند تحميل التطبيق
+  useEffect(() => {
+    checkRedirectResult();
+  }, []);
+
   return (
     <FavoritesProvider>
       <Router>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, signIn, logOut } from '../firebase';
 import { User } from 'firebase/auth';
-import { Search, Bell, User as UserIcon, LogOut, Bookmark, Loader2 } from 'lucide-react';
+import { Search, Bell, Bookmark, LogOut, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -14,9 +14,15 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
+    // متابعة حالة تسجيل الدخول بصفة مستمرة
+    const unsubscribe = auth.onAuthStateChanged((u) => {
+      setUser(u);
+      setIsLoadingAuth(false);
+    });
+
     const handleScroll = () => setIsScrolled(window.scrollY > 0);
     window.addEventListener('scroll', handleScroll);
+
     return () => {
       unsubscribe();
       window.removeEventListener('scroll', handleScroll);
@@ -36,7 +42,6 @@ export default function Navbar() {
       await signIn();
     } catch (error) {
       console.error("Sign-in failed:", error);
-    } finally {
       setIsLoadingAuth(false);
     }
   };
