@@ -2,8 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   GoogleAuthProvider, 
-  signInWithRedirect, 
-  getRedirectResult, 
+  signInWithPopup, 
   signOut 
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -19,76 +18,19 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// دالة بدء تسجيل الدخول
+// دالة تسجيل الدخول بـ Popup
 export const signIn = async () => {
   try {
-    await signInWithRedirect(auth, googleProvider);
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
   } catch (error: any) {
-    console.error('Firebase Auth Redirect Error:', error);
+    if (error.code === 'auth/popup-closed-by-user') {
+      console.log('User closed the popup.');
+      return null;
+    }
+    console.error('Firebase Auth Error:', error);
     throw error;
   }
 };
 
-// الاستماع المباشر لنتيجة الـ Redirect فور تحميل الملف
-getRedirectResult(auth)
-  .then((result) => {
-    if (result) {
-      console.log('Redirect Sign-in Success:', result.user);
-    }
-  })
-  .catch((error) => {
-    console.error('Redirect Sign-in Error:', error);
-  });
-
 export const logOut = () => signOut(auth);
-
-export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-export interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string;
-    email?: string | null;
-    emailVerified?: boolean;
-    isAnonymous?: boolean;
-    tenantId?: string | null;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
-}
-
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
-    operationType,
-    path
-  };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
