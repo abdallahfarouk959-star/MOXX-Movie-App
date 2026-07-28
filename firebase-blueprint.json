@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user-specific metadata and settings.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "description": "The user's profile picture URL." },
+        "email": { "type": "string", "description": "The user's email address." }
+      },
+      "required": ["uid", "email"]
+    },
+    "WatchlistItem": {
+      "title": "Watchlist Item",
+      "description": "A movie or show added to a user's watchlist.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who added the item." },
+        "tmdbId": { "type": "number", "description": "The TMDB ID of the movie or show." },
+        "title": { "type": "string", "description": "The title of the movie or show." },
+        "posterPath": { "type": "string", "description": "The path to the poster image." },
+        "mediaType": { "type": "string", "enum": ["movie", "tv"], "description": "Whether it's a movie or a TV show." },
+        "addedAt": { "type": "string", "format": "date-time", "description": "When the item was added." }
+      },
+      "required": ["userId", "tmdbId", "title"]
+    },
+    "Rating": {
+      "title": "Personal Rating",
+      "description": "A user's personal rating for a movie or show.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who rated the item." },
+        "tmdbId": { "type": "number", "description": "The TMDB ID of the movie or show." },
+        "rating": { "type": "number", "description": "The rating value (e.g., 1-10)." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the rating was last updated." }
+      },
+      "required": ["userId", "tmdbId", "rating"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents."
+    },
+    "/users/{userId}/watchlist/{tmdbId}": {
+      "schema": "WatchlistItem",
+      "description": "A user's watchlist."
+    },
+    "/users/{userId}/ratings/{tmdbId}": {
+      "schema": "Rating",
+      "description": "A user's personal ratings."
+    }
+  }
+}

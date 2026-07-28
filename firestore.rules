@@ -1,0 +1,110 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: /users/{userId}
+// Document ID: userId
+// Fields:
+//   - uid: string (required) - The user's unique ID.
+//   - displayName: string (optional) - The user's display name.
+//   - photoURL: string (optional) - The user's profile picture URL.
+//   - email: string (required) - The user's email address.
+//
+// Collection: /users/{userId}/watchlist/{tmdbId}
+// Document ID: tmdbId
+// Fields:
+//   - userId: string (required) - The user's unique ID.
+//   - tmdbId: number (required) - The TMDB ID of the movie or show.
+//   - title: string (required) - The title of the movie or show.
+//   - posterPath: string (optional) - The path to the poster image.
+//   - mediaType: string (required, enum: ['movie', 'tv']) - The type of media.
+//   - addedAt: timestamp (required) - When the item was added.
+//
+// Collection: /users/{userId}/ratings/{tmdbId}
+// Document ID: tmdbId
+// Fields:
+//   - userId: string (required) - The user's unique ID.
+//   - tmdbId: number (required) - The TMDB ID of the movie or show.
+//   - rating: number (required, 1-10) - The rating value.
+//   - updatedAt: timestamp (required) - When the rating was last updated.
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('photoURL' in data) || isValidUrl(data.photoURL));
+    }
+
+    function isValidWatchlistItem(data, userId) {
+      return data.keys().hasAll(['userId', 'tmdbId', 'title', 'mediaType', 'addedAt']) &&
+             data.userId == userId &&
+             data.tmdbId is number &&
+             data.title is string && data.title.size() > 0 &&
+             data.mediaType in ['movie', 'tv'] &&
+             data.addedAt is timestamp;
+    }
+
+    function isValidRating(data, userId) {
+      return data.keys().hasAll(['userId', 'tmdbId', 'rating', 'updatedAt']) &&
+             data.userId == userId &&
+             data.tmdbId is number &&
+             data.rating is number && data.rating >= 1 && data.rating <= 10 &&
+             data.updatedAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+
+      match /watchlist/{tmdbId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidWatchlistItem(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidWatchlistItem(request.resource.data, userId);
+        allow delete: if isOwner(userId);
+      }
+
+      match /ratings/{tmdbId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidRating(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidRating(request.resource.data, userId);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

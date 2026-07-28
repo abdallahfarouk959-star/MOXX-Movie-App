@@ -1,0 +1,5 @@
+{
+  "name": "Moxx Streaming Discovery",
+  "description": "A professional movie discovery platform with watchlists, ratings, and advanced filtering powered by TMDB.",
+  "requestFramePermissions": []
+}
