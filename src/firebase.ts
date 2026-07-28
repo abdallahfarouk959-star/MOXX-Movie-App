@@ -1,14 +1,19 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithRedirect, 
+  signOut 
+} from 'firebase/auth';
+import { 
+  getFirestore 
+} from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// تهيئة Firestore مع استخدام الـ Database ID المحدد في Config إن وجد أو Default
-export const db = firebaseConfig.firestoreDatabaseId 
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId) 
-  : getFirestore(app);
+// تهيئة Firestore بالـ App مباشرة لتفادي خطأ TypeScript
+export const db = getFirestore(app);
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
@@ -18,18 +23,12 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// دالة تسجيل الدخول المحسنة مع معالجة الأخطاء
+// دالة تسجيل الدخول بـ Redirect لتفادي حظر الـ Pop-ups
 export const signIn = async () => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    await signInWithRedirect(auth, googleProvider);
   } catch (error: any) {
-    // تتجاهل خطأ إغلاق المستخدم للشباك قبل التسجيل منعاً لوقوع التطبيق
-    if (error.code === 'auth/popup-closed-by-user') {
-      console.log('User closed the sign-in popup.');
-      return null;
-    }
-    console.error('Firebase Auth Error:', error);
+    console.error('Firebase Auth Redirect Error:', error);
     throw error;
   }
 };
