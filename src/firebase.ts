@@ -3,28 +3,23 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithRedirect, 
-  getRedirectResult,
+  getRedirectResult, 
   signOut 
 } from 'firebase/auth';
-import { 
-  getFirestore 
-} from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
-// تهيئة Firestore بالـ App مباشرة لتفادي خطأ TypeScript
 export const db = getFirestore(app);
-
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// إجبار محدد الحسابات بالظهور في كل مرة يضغط فيها المستخدم Sign In
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-// دالة بدء تسجيل الدخول بـ Redirect
+// دالة بدء تسجيل الدخول
 export const signIn = async () => {
   try {
     await signInWithRedirect(auth, googleProvider);
@@ -34,19 +29,16 @@ export const signIn = async () => {
   }
 };
 
-// دالة التحقق من نتيجة الـ Redirect عند العودة للموقع
-export const checkRedirectResult = async () => {
-  try {
-    const result = await getRedirectResult(auth);
+// الاستماع المباشر لنتيجة الـ Redirect فور تحميل الملف
+getRedirectResult(auth)
+  .then((result) => {
     if (result) {
-      console.log('Successfully signed in:', result.user);
-      return result.user;
+      console.log('Redirect Sign-in Success:', result.user);
     }
-  } catch (error: any) {
-    console.error('Firebase Redirect Result Error:', error);
-  }
-  return null;
-};
+  })
+  .catch((error) => {
+    console.error('Redirect Sign-in Error:', error);
+  });
 
 export const logOut = () => signOut(auth);
 
